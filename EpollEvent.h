@@ -28,6 +28,7 @@ public:
         event.events = EPOLLIN | EPOLLOUT;
         event.data.fd = -1;
     }
+
     EpollEvent(const std::string &ip1, int start_port1, int end_port1) :
      port_range({ip1, start_port1, end_port1}), event(), epoll_fd(epoll_create1(0))
     {
@@ -44,5 +45,5 @@ public:
             close(epoll_fd);
     }
     bool is_valid();
-    std::vector<int> valid_sockets();
+    std::vector<int> get_open_ports();
 };

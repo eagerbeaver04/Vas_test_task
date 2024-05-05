@@ -35,9 +35,7 @@
 
 # Without extensions
 *
-!/**/
-!*.*
 
 
-EpollEvent.o
-a.out
+test_server
+

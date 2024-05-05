@@ -25,7 +25,7 @@ bool EpollEvent::is_valid()
     return is_epoll_fd_valid() && is_port_range_valid();
 }
 
-std::vector<int> EpollEvent::valid_sockets()
+std::vector<int> EpollEvent::get_open_ports()
 {
     std::vector<int> sockets;
     sockaddr_in serv_addr;
@@ -34,7 +34,7 @@ std::vector<int> EpollEvent::valid_sockets()
         int sock_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
         if (sock_fd == -1)
         {
-            std::cerr << "Failed to create socket" << std::endl;
+            close(sock_fd);
             return;
         }
 
@@ -48,7 +48,7 @@ std::vector<int> EpollEvent::valid_sockets()
             return;
         }
 
-        if (connect(sock_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1 && errno != EINPROGRESS)
+        if (connect(sock_fd, (sockaddr *)&serv_addr, sizeof(serv_addr)) == -1 && errno != EINPROGRESS)
         {
             close(sock_fd);
             return;
@@ -61,7 +61,7 @@ std::vector<int> EpollEvent::valid_sockets()
             close(sock_fd);
             return;
         }
-        
+
         close(sock_fd);
         sockets.push_back(port);
     };
