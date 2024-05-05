@@ -40,7 +40,10 @@ std::vector<int> EpollEvent::get_open_ports()
     {
         int sock_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
         if (sock_fd == -1)
+        {
+            std::cerr << "Failed to create socket for port " << port << std::endl;
             return;
+        }
 
         std::memset(&serv_addr, 0, sizeof(serv_addr));
         serv_addr.sin_family = AF_INET;
@@ -48,12 +51,14 @@ std::vector<int> EpollEvent::get_open_ports()
 
         if (inet_pton(AF_INET, port_range.get_ip().c_str(), &serv_addr.sin_addr) <= 0)
         {
+            std::cerr << "Invalid address or address not supported" << std::endl;
             close(sock_fd);
             return;
         }
 
         if (connect(sock_fd, (sockaddr *)&serv_addr, sizeof(serv_addr)) == -1 && errno != EINPROGRESS)
         {
+            std::cerr << "Failed to connect to port " << port << std::endl;
             close(sock_fd);
             return;
         }
@@ -62,6 +67,7 @@ std::vector<int> EpollEvent::get_open_ports()
         event.data.fd = sock_fd;
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock_fd, &event) == -1)
         {
+            std::cerr << "Failed to add socket to epoll instance" << std::endl;
             close(sock_fd);
             return;
         }
@@ -69,16 +75,16 @@ std::vector<int> EpollEvent::get_open_ports()
         int nfds = epoll_wait(epoll_fd, events, 20, 20);
         if (nfds == -1)
         {
+            std::cerr << "epoll_wait error" << std::endl;
             close(sock_fd);
             return;
         }
         for (int i = 0; i < nfds; ++i)
         {
-
             if (((events[i].events & EPOLLOUT) || (events[i].events & EPOLLIN)))
             {
-                sockets.push_back(port);
-                break;
+                    sockets.push_back(port);
+                    break;
             }
         }
         close(sock_fd);
