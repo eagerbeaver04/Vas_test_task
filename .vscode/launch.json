@@ -1,5 +1,6 @@
 {
     "configurations": [
+        
         {
             "name": "C/C++: gcc сборка и отладка активного файла",
             "type": "cppdbg",
@@ -75,6 +76,14 @@
             ],
             "preLaunchTask": "C/C++: g++ сборка активного файла",
             "miDebuggerPath": "/usr/bin/gdb"
+        },
+        {
+            "type": "cmake",
+            "request": "launch",
+            "name": "Debug portfile(s)",
+            "cmakeDebugType": "external",
+            "pipeName": "/tmp/vcpkg_ext_portfile_dbg",
+            "preLaunchTask": "Debug vcpkg commands"
         }
     ],
     "version": "2.0.0"

@@ -5,6 +5,7 @@
 *.slo
 *.lo
 *.o
+**/*.o
 *.obj
 
 # Precompiled Headers
@@ -30,11 +31,13 @@
 *.exe
 *.out
 *.app
-
-
-.vscode
+**/*.out
 
 # Without extensions
 *
 !/**/
 !*.*
+
+
+EpollEvent.o
+a.out
