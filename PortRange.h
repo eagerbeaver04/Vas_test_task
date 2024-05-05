@@ -1,5 +1,4 @@
 #include <string>
-#include <regex>
 
 class PortRange
 {
@@ -7,7 +6,6 @@ private:
     std::string ip;
     int start_port;
     int end_port;
-    //std::regex ipv4_pattern(R"(\b(?:\d{1,3}\.){3}\d{1,3}\b)");
 public:
     PortRange(const std::string& ip1, int start_port1, int end_port1) : 
         ip(ip1), start_port(start_port1), end_port(end_port1){} 
@@ -15,4 +13,5 @@ public:
     {
         return start_port >= end_port || start_port < 0 || end_port > 65535;
     }
+
 };
