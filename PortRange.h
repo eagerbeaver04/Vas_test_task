@@ -23,7 +23,11 @@ public:
     {
         return ip;
     }
-    void foreach(std::function<void(int)> fun)
+    std::pair<int,int> get_range()
+    {
+        return {start_port, end_port};
+    }
+    void foreach(const std::function<void(int)>& fun)
     {
         for(int i = start_port; i <= end_port; ++i)
             fun(i);

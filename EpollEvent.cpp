@@ -38,14 +38,9 @@ std::vector<int> EpollEvent::get_open_ports()
     std::vector<int> open_ports;
     sockaddr_in serv_addr;
 
-    int epoll_fd = epoll_create1(0);
-    if (epoll_fd == -1)
-    {
-        std::cerr << "Failed to create epoll instance" << std::endl;
-        return open_ports;
-    }
-
-    auto is_socket_valid = [this, &serv_addr, &open_ports, epoll_fd](int port) -> void
+    epoll_event event;
+    event.events = EPOLLOUT | EPOLLERR;
+    auto is_port_valid = [this, &serv_addr, &open_ports, &event](int port) -> void
     {
         int sock_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
         if (sock_fd == -1)
@@ -72,8 +67,6 @@ std::vector<int> EpollEvent::get_open_ports()
             return;
         }
 
-        epoll_event event;
-        event.events = EPOLLOUT | EPOLLERR;
         event.data.fd = sock_fd;
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock_fd, &event) == -1)
         {
@@ -92,7 +85,7 @@ std::vector<int> EpollEvent::get_open_ports()
         open_ports.push_back(port);
     };
 
-    port_range.foreach (is_socket_valid);
+    port_range.foreach (is_port_valid);
 
     return open_ports;
 }
