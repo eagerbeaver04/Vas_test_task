@@ -1,5 +1,13 @@
 #include "EpollEvent.h"
 
+int set_nonblock(int fd)
+{
+    int flags;
+    if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
+        flags = 0;
+    return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
 bool EpollEvent::is_epoll_fd_valid()
 {
     if (epoll_fd == -1)
@@ -27,16 +35,17 @@ bool EpollEvent::is_valid()
 
 std::vector<int> EpollEvent::get_open_ports()
 {
-    std::vector<int> sockets;
+    std::vector<int> open_ports;
     sockaddr_in serv_addr;
+
     int epoll_fd = epoll_create1(0);
     if (epoll_fd == -1)
     {
         std::cerr << "Failed to create epoll instance" << std::endl;
-        return sockets;
+        return open_ports;
     }
 
-    auto is_socket_valid = [this, &serv_addr, &sockets, epoll_fd](int port) -> void
+    auto is_socket_valid = [this, &serv_addr, &open_ports, epoll_fd](int port) -> void
     {
         int sock_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
         if (sock_fd == -1)
@@ -44,7 +53,7 @@ std::vector<int> EpollEvent::get_open_ports()
             std::cerr << "Failed to create socket for port " << port << std::endl;
             return;
         }
-
+        
         std::memset(&serv_addr, 0, sizeof(serv_addr));
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_port = htons(port);
@@ -58,12 +67,13 @@ std::vector<int> EpollEvent::get_open_ports()
 
         if (connect(sock_fd, (sockaddr *)&serv_addr, sizeof(serv_addr)) == -1 && errno != EINPROGRESS)
         {
-            std::cerr << "Failed to connect to port " << port << std::endl;
+            std::cerr << "Failed to connect" << std::endl;
             close(sock_fd);
             return;
         }
+
         epoll_event event;
-        event.events = EPOLLIN || EPOLLOUT;
+        event.events = EPOLLOUT | EPOLLERR;
         event.data.fd = sock_fd;
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock_fd, &event) == -1)
         {
@@ -71,27 +81,18 @@ std::vector<int> EpollEvent::get_open_ports()
             close(sock_fd);
             return;
         }
-        struct epoll_event events[20];
-        int nfds = epoll_wait(epoll_fd, events, 20, 20);
-        if (nfds == -1)
+
+        int error = 0;
+        socklen_t len = sizeof(error);
+        if (!(getsockopt(sock_fd, SOL_SOCKET, SO_ERROR, &error, &len) == 0 && error == 0))
         {
-            std::cerr << "epoll_wait error" << std::endl;
             close(sock_fd);
             return;
         }
-        for (int i = 0; i < nfds; ++i)
-        {
-            if (((events[i].events & EPOLLOUT) || (events[i].events & EPOLLIN)))
-            {
-                    sockets.push_back(port);
-                    break;
-            }
-        }
-        close(sock_fd);
+        open_ports.push_back(port);
     };
 
     port_range.foreach (is_socket_valid);
-    close(epoll_fd);
 
-    return sockets;
+    return open_ports;
 }
